@@ -1,0 +1,26 @@
+mat uwu 50 new; #wale konia
+#readline uwu
+mat uwu|(5+5)*2 = `-1`;
+mat uwu `55` add;
+
+
+while from;
+    readline uwu;
+    if `48` == `uwu|0`;
+    from;
+        printf `sn` uwu`;
+    to;
+    if `49` == `uwu|0`;
+    from;
+        break;
+    to;
+to;
+
+if `1` == `1`;
+from;
+    if `1` == `1`;
+    from;
+        printf `cccn` `uwu|0`  `uwu|1`  `uwu|2`;
+    to;
+to;
+STOP;
