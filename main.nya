@@ -1,0 +1,32 @@
+#nyaScript
+
+mat uwu 50 new; #wale konia
+#readline uwu
+mat uwu|(5+5)*2 = `-1`;
+mat uwu `55` add;
+
+var fortnite = '0' new;
+
+
+while from;
+    readline uwu;
+    if `48` == `uwu|0`;
+        printf `sn` uwu`;
+        break;
+    to;
+    if `49` == `uwu|0`;
+        var fortnite = 0;
+        while;
+            var fortnite = `fortnite +1`;
+            printf `sn` nyga;
+            if `fortnite` == `5`;
+                break;
+            to;
+        to;
+    to;
+to;
+
+if `1` == `1`;
+    printf `sn` meow;
+to;
+STOP;

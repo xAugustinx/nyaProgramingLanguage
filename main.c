@@ -29,24 +29,33 @@ int matrixAmount = 1;
 char line[1024], * args[64];
 int argsCounter = 0;
 
-typedef struct {int x; byte ifOrWhile; byte czyBylBrake; } pointOfWhile;
-pointOfWhile * pointsOfWhile;
+typedef struct {int x; byte ifOrWhile; byte czyBylBrake; } pointOfWhile2;
+pointOfWhile2 * pointsOfWhile;
 int amountOfPoints = 1;
+
+typedef struct {int lineOf; char * name;} defs;
+defs * nyaDef;
+int nyaDefAmount = 1;
+
+int * defJumps;
+int defJumpsAmount = 1;
 
 int pierwszy = 0;
 
-#define keyWordsAmount 10
-char * keyWords[] = {"STOP","var","printf","mat","readline","if","from","to","while","break"};
+#define keyWordsAmount 12
+char * keyWords[] = {"STOP","var","printf","mat","readline","if","from","to","while","break","def","return"};
 
 #define keyWordsGetAmount 4
 char * keyWordsForGet[] = {"Lenght","Max","Min","len"};
+
+byte defOrNot = false;
 
 
 char *blad = "";
 
 void iforlalj(byte x,int mniejCzyWiecej) {
     amountOfPoints+=mniejCzyWiecej;
-    pointOfWhile * zzz = realloc(pointsOfWhile,sizeof(pointOfWhile) * amountOfPoints);
+    pointOfWhile2 * zzz = realloc(pointsOfWhile,sizeof(pointOfWhile2) * amountOfPoints);
     pointsOfWhile = zzz;
     if (mniejCzyWiecej == 1) {
         pointsOfWhile[amountOfPoints-1].x = pierwszy;
@@ -63,6 +72,8 @@ int strlenA(char * x) {
 }
 
 int compareString(char * x, char * y) {
+    if (x == NULL || y == NULL) {printf("NULL IN COMPARE\n"); return 0; }
+
     for (int i = 0; TRUE; i++) {
         if (x[i] != y[i]) return FALSE;
         else if (x[i] == 0) return TRUE;
@@ -311,12 +322,14 @@ char * matrixCreating() {
     else return "Variable doesn't exist or `new` isn't used";
     return "";
 }
-
+void fromNya() {
+    iforlalj(0,1);
+    leftCount++;
+}
 char * jezeli() {
     byte result = false;
     int one = stringToValue(args[1]);
     int two = stringToValue(args[3]);
-
 
     char * op = args[2];
 
@@ -330,9 +343,10 @@ char * jezeli() {
     else return "error, ";
 
     ignoreOrNot = !result;
-
     leftCount = 0;
     rightCount = 0;
+
+    fromNya();
 
     return "";
 }
@@ -345,13 +359,10 @@ char * pentlaWhile() {
     return "";
 }
 
-void fromNya() {
-    iforlalj(0,1);
-    leftCount++;
-}
+
 void rightNya() {
     rightCount++;
-    if (leftCount == leftCount) {
+    if (amountOfPoints > 0) {
         ignoreOrNot = false;
         if (pointsOfWhile[amountOfPoints-1].ifOrWhile) {
             if (!pointsOfWhile[amountOfPoints-1].czyBylBrake) pierwszy = pointsOfWhile[amountOfPoints-1].x;
@@ -359,6 +370,7 @@ void rightNya() {
         }
         else iforlalj(0,-1);
     }
+    else {}
 }
 
 char * brejk() {
@@ -370,17 +382,68 @@ char * brejk() {
     }
     return "";
 }
-char * def
+
+char * defUwUNya() {
+
+    if (argsCounter == 3) {
+        if (compareString("new",args[2])) {
+            defOrNot = true;
+            if (!(leftCount == rightCount && leftCount == 0)) return "Def must be created in void.";
+            ignoreOrNot = true;
+            fromNya();
+
+            nyaDefAmount++;
+            defs * tmps = realloc(nyaDef, sizeof(defs) * nyaDefAmount );
+            nyaDef = tmps;
+
+            nyaDef[nyaDefAmount-1].lineOf = pierwszy;
+            nyaDef[nyaDefAmount-1].name = strdup(args[1]);
+        }
+    }
+    else for (int i = 1; i < nyaDefAmount; i++) if (compareString(nyaDef[i].name, args[1] )) {
+        defJumpsAmount++;
+        int * tmps = realloc(defJumps, sizeof(int) * defJumpsAmount );
+        defJumps = tmps;
+        defJumps[defJumpsAmount - 1] = pierwszy;
+
+        pierwszy = nyaDef[i].lineOf;
+
+        break;
+    }
+
+    return "";
+}
+char * powrot() {
+    if (defOrNot) {
+        ignoreOrNot = false;
+        defOrNot = false;
+        return "";
+    }
+
+    pierwszy = defJumps[defJumpsAmount - 1];
+    defJumpsAmount--;
+    int * tmps = realloc(defJumps, sizeof(int) * defJumpsAmount );
+    defJumps = tmps;
+
+    ignoreOrNot = false;
+
+    rightNya();
+
+    return "";
+}
+
 int main(int argc, char *argv[])
 {
+    nyaDef = malloc(sizeof(defs));
     variables = malloc(sizeof(variable));
     matrixs = malloc(sizeof(matrix));
-    pointsOfWhile = malloc(sizeof(pointOfWhile));
+    pointsOfWhile = malloc(sizeof(pointOfWhile2));
+    defJumps = malloc(sizeof(int));
 
     FILE *f;
     byte z;
     if (argc > 1) f = fopen(argv[1], "r");
-    else f = fopen("nya", "r");
+    else f = fopen("main.nya", "r");
 
 
     fseek(f, 0, SEEK_END);
@@ -390,14 +453,15 @@ int main(int argc, char *argv[])
             fseek(f, i, SEEK_SET);
             codeFile[i] = fgetc(f);
         }
-        for (int i = 0; i < fileSize; i++) if (codeFile[i] == ';' ) konceAmount++;
+        for (int i = 0; i < fileSize; i++) if (codeFile[i] == ';' || codeFile[i] == ':' ) konceAmount++;
         konce = malloc(sizeof(int) * konceAmount+2);
         int licznikKoncow = 1;
-        for (int i = 0; i < fileSize; i++) if (codeFile[i] == ';' ) {konce[licznikKoncow] = i; licznikKoncow++;}
+        for (int i = 0; i < fileSize; i++) if (codeFile[i] == ';' || codeFile[i] == ':'  ) {konce[licznikKoncow] = i; licznikKoncow++;}
         konce[0] = -1;
         fclose(f);
 
     pierwszy = 0;
+    //konceAmount = 0;
 
     while (TRUE) {
         int i;
@@ -431,6 +495,7 @@ int main(int argc, char *argv[])
             if (!syscallCode) break;
             else if (syscallCode == 6) fromNya();
             else if (syscallCode == 7) rightNya();
+            else if (syscallCode == 11) e = powrot();
             else if (!ignoreOrNot) {
                 switch (syscallCode) {
                     case 1: e = newVariable() bry
@@ -440,6 +505,7 @@ int main(int argc, char *argv[])
                     case 5: e = jezeli() bry
                     case 8: e = pentlaWhile() bry
                     case 9: e = brejk() bry
+                    case 10: e = defUwUNya() bry
                 }
             }
 
@@ -452,13 +518,19 @@ int main(int argc, char *argv[])
 
         //nie dodakaj
         pierwszy++;
-        if (pierwszy == konceAmount-1) break;
+        if (pierwszy == licznikKoncow-1) break;
     }
 
 
     if (codeFile != NULL) free(codeFile);
     if (konce != NULL) free(konce);
+
+    for (int i = 0; i < amountOfVariables; i++) free(variables[i].name);
+    for (int i = 0; i < matrixAmount; i++) free(matrixs[i].name);
+
     free(variables);
     free(matrixs);
     free(pointsOfWhile);
+    free(defJumps);
+    free(nyaDef);
 }
