@@ -1,3 +1,6 @@
+char pppppp[] = "printf `sn` meow;";
+#define compile 0
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,6 +13,8 @@
 #define byte unsigned char
 #define bry ;break;
 
+int licznikFromTo = 0;
+
 byte leftCount = 0, rightCount = 0, ignoreOrNot = false;
 
 char * codeFile;
@@ -18,7 +23,7 @@ int codeBytes = 1;
 int * konce;
 int konceAmount = 1;
 
-typedef struct {char type; int value; char * name; byte touch; } variable;
+typedef struct {int value; char * name;  } variable;
 int amountOfVariables = 1;
 variable * variables;
 
@@ -37,7 +42,9 @@ typedef struct {int lineOf; char * name;} defs;
 defs * nyaDef;
 int nyaDefAmount = 1;
 
-int * defJumps;
+typedef struct {int x; char * name; } dfjps;
+
+dfjps * defJumps;
 int defJumpsAmount = 1;
 
 int pierwszy = 0;
@@ -48,8 +55,14 @@ char * keyWords[] = {"STOP","var","printf","mat","readline","if","from","to","wh
 #define keyWordsGetAmount 4
 char * keyWordsForGet[] = {"Lenght","Max","Min","len"};
 
+char * nazwaZmiennejKtoramUstawiamy = "";
+
 byte defOrNot = false;
 
+
+variable returnedWartoscZwrotna;
+
+byte ignorancjaDoReturn = false;
 
 char *blad = "";
 
@@ -127,6 +140,48 @@ void backSpace(char * x) {
         x[i] = x[i+doConfiecia];
     }
 }
+void fromNya() {
+    iforlalj(0,1);
+    leftCount++;
+    licznikFromTo++;
+}
+
+char * defUwUNya(char * x[],int argsCounterLocal) {
+    bool czyBylJuz = false;
+    if (argsCounterLocal >= 3) {
+        if (compareString("new",x[2])) {
+            czyBylJuz = true;
+            ignorancjaDoReturn = true;
+            defOrNot = true;
+            if (licznikFromTo) return "Def must be created in void.";
+            ignoreOrNot = true;
+            fromNya();
+
+            nyaDefAmount++;
+            defs * tmps = realloc(nyaDef, sizeof(defs) * nyaDefAmount );
+            nyaDef = tmps;
+
+            nyaDef[nyaDefAmount-1].lineOf = pierwszy;
+            nyaDef[nyaDefAmount-1].name = strdup(x[1]);
+        }
+
+    }
+    if (!czyBylJuz) for (int i = 1; i < nyaDefAmount; i++) if (compareString(nyaDef[i].name, x[1] )) {
+        defJumpsAmount++;
+        dfjps * tmps = realloc(defJumps, sizeof(dfjps) * defJumpsAmount );
+        defJumps = tmps;
+        defJumps[defJumpsAmount - 1].x = pierwszy;
+        defJumps[defJumpsAmount - 1].name = "";
+
+        if (argsCounterLocal == 4) if (compareString("to",x[2])) defJumps[defJumpsAmount - 1].name = strdup(x[3]);
+
+        pierwszy = nyaDef[i].lineOf;
+
+        break;
+    }
+
+    return "";
+}
 
 int stringToValue(char * x) {
     char nameOfString[100];
@@ -145,22 +200,18 @@ int stringToValue(char * x) {
     char operrant = '+';
     int len = strlenA(x);
     for (int i = 0; i <= len; i++) {
-
         if ((x[i] == '+' || x[i] == '-' || x[i] == '*' || x[i] == '/' || x[i] == 0 || x[i] == '`') && (pierwszyNawiasu == -1 || ostatniNawiasu != -1) && iloscLewych == iloscPrawych ) {
             if (pierwszyNawiasu != -1) {
                 char buf[ostatniNawiasu-pierwszyNawiasu+4];
                 for (int j = pierwszyNawiasu; j < ostatniNawiasu; j++) buf[j-pierwszyNawiasu] = x[j];
                 buf[ostatniNawiasu - pierwszyNawiasu] = 0;
                 oneValue = stringToValue(buf);
-
             }
             if (pierwszyStringa != -1) {
                 for (int j = pierwszyStringa; j < ostatni; j++) nameOfString[j-pierwszyStringa] = x[j];
                 nameOfString[ostatni-pierwszyStringa] = 0;
-
                 char * liczbaNya;
                 char * afterDot;
-
                 byte czyTablica = FALSE;
                 byte czyInnyParametr = FALSE;
 
@@ -169,7 +220,11 @@ int stringToValue(char * x) {
                     else if (nameOfString[j] == '.') {nameOfString[j] = 0; czyInnyParametr = TRUE; afterDot = &nameOfString[j+1] bry   }
                 }
 
-                if (czyInnyParametr) {
+                int strlenNameOfString = strlenA(nameOfString);
+                if (nameOfString[0] == '"' && nameOfString[strlenNameOfString-1] == '"') {
+                    for (int n = 1; n < strlenNameOfString-1; n++) oneValue+= nameOfString[n];
+                }
+                else if (czyInnyParametr) {
                     int codeOf = -1;
                     for (int j = 0; j < keyWordsGetAmount; j++) if (compareString(afterDot, keyWordsForGet[j] )) {codeOf = j bry}
                     if (codeOf == -1) blad = "Doesn't existing method.";
@@ -254,7 +309,7 @@ char *  newVariable() {
 
     if (czyJestNew && val == -1) {
         val = amountOfVariables;
-        variable tmp = {'i',0,strdup(args[1]),1};
+        variable tmp = {0,strdup(args[1])};
         amountOfVariables++;
         variable * tmpVars = realloc(variables, amountOfVariables * sizeof(variable));
         tmpVars[amountOfVariables-1] = tmp;
@@ -271,7 +326,7 @@ char *  newVariable() {
 char * matrixCreating() {
     int lenghtOfMat = strlenA(args[1]);
     char nameOfMatVar[100];
-    char * liczba;
+    char * liczba = NULL;
     int codeOfMat = -1;
 
     for (int i = 0; i <= lenghtOfMat; i++) {
@@ -281,7 +336,7 @@ char * matrixCreating() {
             liczba = &args[1][i+1];
         }
     }
-    if (liczba != NULL)  codeOfMat = stringToValue(liczba);
+    if (liczba != NULL) codeOfMat = stringToValue(liczba);
 
     int code = matrixAmount;
     for (int i = 1; i < matrixAmount; i++) if (compareString(matrixs[i].name, nameOfMatVar )) code = i ;
@@ -301,7 +356,7 @@ char * matrixCreating() {
         int rozmiar = stringToValue(args[2]);
         matrix new = {strdup(args[1]),malloc(sizeof(variable) * rozmiar) ,rozmiar};
 
-        variable uwu = {0,0,"",0};
+        variable uwu = {0,""};
         for (int i = 0; i < rozmiar; i++) new.list[i] = uwu;
 
         matrixAmount++;
@@ -322,31 +377,34 @@ char * matrixCreating() {
     else return "Variable doesn't exist or `new` isn't used";
     return "";
 }
-void fromNya() {
-    iforlalj(0,1);
-    leftCount++;
-}
+
 char * jezeli() {
     byte result = false;
     int one = stringToValue(args[1]);
-    int two = stringToValue(args[3]);
+    if (argsCounter != 2) {
+        int two = stringToValue(args[3]);
 
-    char * op = args[2];
+        char * op = args[2];
 
-    if (argsCounter < 4) result = one;
-    else if (compareString(op, "==")) result = (one == two);
-    else if (compareString(op, "!=")) result = (one != two);
-    else if (compareString(op, ">"))  result = (one > two);
-    else if (compareString(op, "<"))  result = (one < two);
-    else if (compareString(op, ">=")) result = (one >= two);
-    else if (compareString(op, "<=")) result = (one <= two);
-    else return "error, ";
+        if (argsCounter < 4) result = one;
+        else if (compareString(op, "==")) result = (one == two);
+        else if (compareString(op, "!=")) result = (one != two);
+        else if (compareString(op, ">"))  result = (one > two);
+        else if (compareString(op, "<"))  result = (one < two);
+        else if (compareString(op, ">=")) result = (one >= two);
+        else if (compareString(op, "<=")) result = (one <= two);
+        else return "error, ";
+    }
+    else result = one;
+
+
 
     ignoreOrNot = !result;
     leftCount = 0;
     rightCount = 0;
 
     fromNya();
+
 
     return "";
 }
@@ -362,6 +420,8 @@ char * pentlaWhile() {
 
 void rightNya() {
     rightCount++;
+    licznikFromTo--;
+
     if (amountOfPoints > 0) {
         ignoreOrNot = false;
         if (pointsOfWhile[amountOfPoints-1].ifOrWhile) {
@@ -374,7 +434,7 @@ void rightNya() {
 }
 
 char * brejk() {
-    for (int i = amountOfPoints-1; i > 0; i--) {
+    for (int i = amountOfPoints-1; i >= 0; i--) {
         if (pointsOfWhile[i].ifOrWhile) {
             pointsOfWhile[i].czyBylBrake = true;
             break;
@@ -383,54 +443,38 @@ char * brejk() {
     return "";
 }
 
-char * defUwUNya() {
 
-    if (argsCounter == 3) {
-        if (compareString("new",args[2])) {
-            defOrNot = true;
-            if (!(leftCount == rightCount && leftCount == 0)) return "Def must be created in void.";
-            ignoreOrNot = true;
-            fromNya();
-
-            nyaDefAmount++;
-            defs * tmps = realloc(nyaDef, sizeof(defs) * nyaDefAmount );
-            nyaDef = tmps;
-
-            nyaDef[nyaDefAmount-1].lineOf = pierwszy;
-            nyaDef[nyaDefAmount-1].name = strdup(args[1]);
-        }
-    }
-    else for (int i = 1; i < nyaDefAmount; i++) if (compareString(nyaDef[i].name, args[1] )) {
-        defJumpsAmount++;
-        int * tmps = realloc(defJumps, sizeof(int) * defJumpsAmount );
-        defJumps = tmps;
-        defJumps[defJumpsAmount - 1] = pierwszy;
-
-        pierwszy = nyaDef[i].lineOf;
-
-        break;
-    }
-
-    return "";
-}
 char * powrot() {
+    ignoreOrNot = false;
+    licznikFromTo--;
     if (defOrNot) {
-        ignoreOrNot = false;
         defOrNot = false;
         return "";
     }
+    pierwszy = defJumps[defJumpsAmount - 1].x;
 
-    pierwszy = defJumps[defJumpsAmount - 1];
+    if (defJumps[defJumpsAmount - 1].name[0]) {
+        for (int i = 1; i < amountOfVariables; i++) if (compareString(defJumps[defJumpsAmount - 1].name, variables[i].name)) {
+            int z = stringToValue(args[1]);
+            variables[i].value = z;
+            break;
+        }
+        free(defJumps[defJumpsAmount - 1].name);
+    }
+
+
     defJumpsAmount--;
-    int * tmps = realloc(defJumps, sizeof(int) * defJumpsAmount );
+    dfjps * tmps = realloc(defJumps, sizeof(dfjps) * defJumpsAmount );
     defJumps = tmps;
-
-    ignoreOrNot = false;
 
     rightNya();
 
+    if (argsCounter > 1) returnedWartoscZwrotna.value = stringToValue(args[1]);
+    else returnedWartoscZwrotna.value = 0;
+
     return "";
 }
+
 
 int main(int argc, char *argv[])
 {
@@ -438,27 +482,34 @@ int main(int argc, char *argv[])
     variables = malloc(sizeof(variable));
     matrixs = malloc(sizeof(matrix));
     pointsOfWhile = malloc(sizeof(pointOfWhile2));
-    defJumps = malloc(sizeof(int));
+    defJumps = malloc(sizeof(dfjps));
+    int fileSize = 0;
+    if (!compile) {
+        FILE *f;
+        byte z;
+        if (argc > 1) f = fopen(argv[1], "r");
+        else f = fopen("main.nya", "r");
 
-    FILE *f;
-    byte z;
-    if (argc > 1) f = fopen(argv[1], "r");
-    else f = fopen("main.nya", "r");
-
-
-    fseek(f, 0, SEEK_END);
-    int fileSize = ftell(f);
-    codeFile = malloc(fileSize);
-    for (int i = 0; i < fileSize; i++) {
-            fseek(f, i, SEEK_SET);
-            codeFile[i] = fgetc(f);
-        }
-        for (int i = 0; i < fileSize; i++) if (codeFile[i] == ';' || codeFile[i] == ':' ) konceAmount++;
-        konce = malloc(sizeof(int) * konceAmount+2);
-        int licznikKoncow = 1;
-        for (int i = 0; i < fileSize; i++) if (codeFile[i] == ';' || codeFile[i] == ':'  ) {konce[licznikKoncow] = i; licznikKoncow++;}
-        konce[0] = -1;
+            fseek(f, 0, SEEK_END);
+            fileSize = ftell(f);
+            codeFile = malloc(fileSize);
+            for (int i = 0; i < fileSize; i++) {
+                fseek(f, i, SEEK_SET);
+                codeFile[i] = fgetc(f);
+            }
         fclose(f);
+    }
+    else {
+        fileSize = sizeof(pppppp);
+        codeFile = malloc(fileSize);
+        for (int i = 0; i < fileSize; i++) codeFile[i] = pppppp[i];
+    }
+
+    for (int i = 0; i < fileSize; i++) if (codeFile[i] == ';' || codeFile[i] == ':' ) konceAmount++;
+    konce = malloc(sizeof(int) * konceAmount+2);
+    int licznikKoncow = 1;
+    for (int i = 0; i < fileSize; i++) if (codeFile[i] == ';' || codeFile[i] == ':'  ) {konce[licznikKoncow] = i; licznikKoncow++;}
+    konce[0] = -1;
 
     pierwszy = 0;
     //konceAmount = 0;
@@ -472,9 +523,10 @@ int main(int argc, char *argv[])
         byte nothing = FALSE;
         if (strlen(line) > 1) if (line[0] == '/' && line[1] == '/' ) nothing = TRUE;
 
-        if (!nothing)
-        {
+        if (!nothing){
+            for (i=1;i<50;i++)args[i]=NULL;
             args[0] = &line[0];
+
             argsCounter = 1;
             int lenLine = strlenA(line);
             byte userMode = FALSE;
@@ -492,12 +544,12 @@ int main(int argc, char *argv[])
 
             char * e = "";
 
-            if (!syscallCode) break;
-            else if (syscallCode == 6) fromNya();
+            if (syscallCode == 6) fromNya();
             else if (syscallCode == 7) rightNya();
             else if (syscallCode == 11) e = powrot();
-            else if (!ignoreOrNot) {
+            else if (!ignoreOrNot && !defOrNot) {
                 switch (syscallCode) {
+                    case 0: e = "program was correctly stoped" bry
                     case 1: e = newVariable() bry
                     case 2: e = napisz() bry
                     case 3: e = matrixCreating() bry
@@ -505,7 +557,7 @@ int main(int argc, char *argv[])
                     case 5: e = jezeli() bry
                     case 8: e = pentlaWhile() bry
                     case 9: e = brejk() bry
-                    case 10: e = defUwUNya() bry
+                    case 10: e = defUwUNya(args,argsCounter) bry
                 }
             }
 

@@ -1,32 +1,38 @@
-#nyaScript
+def fortnite new:
+    printf `sn` meow;
+    return `15`;
 
-mat uwu 50 new; #wale konia
-#readline uwu
-mat uwu|(5+5)*2 = `-1`;
-mat uwu `55` add;
-
-var fortnite = '0' new;
-
-
-while from;
-    readline uwu;
-    if `48` == `uwu|0`;
-        printf `sn` uwu`;
-        break;
-    to;
-    if `49` == `uwu|0`;
-        var fortnite = 0;
-        while;
-            var fortnite = `fortnite +1`;
-            printf `sn` nyga;
-            if `fortnite` == `5`;
-                break;
+def main new:
+    def fortnite;
+    mat uwu `50` new; #wale konia
+    mat uwu|(5+5)*2 = `-1`;
+    mat uwu `55` add;
+    var fortnite = '0' new;
+    while;
+        readline uwu;
+        if `"0"` == `uwu|0`;
+            printf `sn` uwu`;
+            break;
+        to;
+        if `"0"+1` == `uwu|0`;
+            var fortnite = 0;
+            while;
+                var fortnite = `fortnite +1`;
+                printf `sn` nyga;
+                if `fortnite` == `5`;
+                    break;
+                to;
             to;
         to;
     to;
-to;
+    if 1;
+        printf `sn` meow;
+    to;
+    return;
+def main;
 
-if `1` == `1`;
-    printf `sn` meow;
-to;
+var waleKonia = 0 new;
+def fortnite to waleKonia;
+printf `dn` waleKonia;
+
 STOP;
